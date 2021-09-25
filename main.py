@@ -1,6 +1,7 @@
 import  tkinter
 import random
 import pyperclip
+import  json
 from tkinter import messagebox
 # ---------------------------- PASSWORD GENERATOR ------------------------------- #
 #Password Generator Project
@@ -34,22 +35,39 @@ def generatePassword():
 # ---------------------------- SAVE PASSWORD ------------------------------- #
 
 def save():
-    website=web_inp.get()
-    email=email_inp.get()
-    password=pass_inp.get()
-    check=True
-    if len(website)==0 or len(email)==0 or len(password)==0:
-        check =False
-    if check==False:
-        tkinter.messagebox.showwarning(title="Oops",message="Please don't leave any field empty!")
-    is_ok=False
-    if check==True:
-        is_ok = messagebox.askokcancel(title=website,message=f"These are the details entered: \n EmailL: {email} \n Password: {password}\n Is is ok to save ?")
-    if is_ok :
-        with open("data.txt","a") as file:
-            file.write(f"{website} | {email} | {password}\n")
-        clear_data()
 
+    website = web_inp.get()
+    email = email_inp.get()
+    password = pass_inp.get()
+    new_data = {
+        website: {
+            "email": email,
+            "password": password,
+        }
+    }
+
+    if len(website) == 0 or len(password) == 0:
+        messagebox.showinfo(title="Oops", message="Please make sure you haven't left any fields empty.")
+    else:
+        messagebox.askokcancel(
+            title=web_inp,
+            message=f"These are the details entered : \n\nEmail: {email} \nPassword: {password} \n\nIs it OK to save?")
+        try:
+            with open("data.json", "r") as data_file:
+                #Reading old data
+                data = json.load(data_file)
+        except FileNotFoundError:
+            with open("data.json", "w") as data_file:
+                json.dump(new_data, data_file, indent=4)
+        else:
+            #Updating old data with new data
+            data.update(new_data)
+
+            with open("data.json", "w") as data_file:
+                #Saving updated data
+                json.dump(data, data_file, indent=4)
+        finally:
+            clear_data()
 
 def clear_data():
     web_inp.delete(0,tkinter.END)
@@ -58,7 +76,24 @@ def clear_data():
     email_inp.insert(0, "parush@gmail.com")
 
 # ---------------------------- UI SETUP ------------------------------- #
+#
+def find_password():
+    website = web_inp.get()
+    try:
+        with open("data.json") as data_file:
+            data = json.load(data_file)
+    except FileNotFoundError:
+        messagebox.showinfo(title="Error", message="No Data File Found.")
+    else:
+        if website in data:
+            email = data[website]["email"]
+            password = data[website]["password"]
+            messagebox.showinfo(title=website, message=f"Email: {email}\nPassword: {password}")
+        else:
+            messagebox.showinfo(title="Error", message=f"No details for {website} exists.")
 
+
+    # print(user)
 
 window=tkinter.Tk()
 window.title("Password Manager")
@@ -79,6 +114,7 @@ email_label.grid(row=2,column=0)
 password_label=tkinter.Label(text="Password: ")
 password_label.grid(row=3,column=0)
 
+
 #Entry
 web_inp=tkinter.Entry(width=35)
 web_inp.grid(row=1,column=1,columnspan=2)
@@ -97,6 +133,9 @@ gen_pass.grid(row=3,column=2)
 
 add=tkinter.Button(text="Add",width=36,command=save)
 add.grid(row=4,column=1,columnspan=2)
+
+search=tkinter.Button(text="Search",width=15,command=find_password)
+search.grid(row=1,column=2)
 
 
 
